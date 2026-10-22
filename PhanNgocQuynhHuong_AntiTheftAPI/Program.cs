@@ -155,8 +155,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    // Tu dong khoi tao database va cac bang tren Cloud PostgreSQL neu chua ton tai
-    await dbContext.Database.EnsureCreatedAsync();
+    // Tu dong chay Migration de tao bang du lieu tren Cloud PostgreSQL khi khoi chay
+    await dbContext.Database.MigrateAsync();
 
     var roleManager = scope.ServiceProvider
         .GetRequiredService<RoleManager<IdentityRole>>();
