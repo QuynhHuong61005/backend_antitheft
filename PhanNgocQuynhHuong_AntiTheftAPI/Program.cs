@@ -35,13 +35,39 @@ if (Encoding.UTF8.GetByteCount(jwtSettings.SecretKey) < 32)
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("Jwt"));
 
-var connectionString =
-    builder.Configuration.GetConnectionString("DefaultConnection")
+// Uu tien lay DATABASE_URL tu bien moi truong Render/Cloud, neu khong co moi lay tu appsettings.json
+var rawConnectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
-        "Khong tim thay connection string DefaultConnection.");
+        "Khong tim thay connection string co so du lieu.");
 
+// Xu ly dinh dang postgres:// hoac postgresql:// do Render cung cap sang format Npgsql
+string connectionString;
+if (rawConnectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+    rawConnectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+{
+    var databaseUri = new Uri(rawConnectionString);
+    var userInfo = databaseUri.UserInfo.Split(':');
+
+    var npgsqlBuilder = new Npgsql.NpgsqlConnectionStringBuilder
+    {
+        Host = databaseUri.Host,
+        Port = databaseUri.Port > 0 ? databaseUri.Port : 5432,
+        Username = userInfo[0],
+        Password = userInfo.Length > 1 ? userInfo[1] : string.Empty,
+        Database = databaseUri.LocalPath.TrimStart('/'),
+        SslMode = Npgsql.SslMode.Require
+    };
+    connectionString = npgsqlBuilder.ToString();
+}
+else
+{
+    connectionString = rawConnectionString;
+}
+
+// Su dung PostgreSQL cho Entity Framework Core
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseNpgsql(connectionString));
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>()
@@ -128,6 +154,10 @@ builder.Services.AddScoped<IFaceRecognitionService, FaceRecognitionService>();
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    // Tu dong khoi tao database va cac bang tren Cloud PostgreSQL neu chua ton tai
+    await dbContext.Database.EnsureCreatedAsync();
+
     var roleManager = scope.ServiceProvider
         .GetRequiredService<RoleManager<IdentityRole>>();
 
