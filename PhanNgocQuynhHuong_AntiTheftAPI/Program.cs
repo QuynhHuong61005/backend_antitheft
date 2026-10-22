@@ -156,7 +156,7 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     // Tu dong chay Migration de tao bang du lieu tren Cloud PostgreSQL khi khoi chay
-    await dbContext.Database.MigrateAsync();
+    // await dbContext.Database.MigrateAsync();
 
     var roleManager = scope.ServiceProvider
         .GetRequiredService<RoleManager<IdentityRole>>();
