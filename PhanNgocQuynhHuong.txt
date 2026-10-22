@@ -1,0 +1,99 @@
+========================================================================================
+                      BÁO CÁO TỔNG QUAN ĐỒ ÁN CHUYÊN NGÀNH
+             HỆ THỐNG GIÁM SÁT & BÁO ĐỘNG CHỐNG TRỘM THÔNG MINH
+                   TÍCH HỢP AI NHẬN DIỆN KHUÔN MẶT (ANTITHEFT)
+========================================================================================
+
+THÔNG TIN CHUNG:
+- Sinh viên thực hiện : Phan Ngọc Quỳnh Hương
+- Tên đồ án           : Hệ thống Giám sát & Báo động Chống trộm Thông minh tích hợp AI Nhận diện Khuôn mặt (Smart Anti-Theft System)
+- Công nghệ Backend   : C# .NET 8.0 Web API, Entity Framework Core 8, SQL Server
+- Công nghệ Trí tuệ AI: Vector Embedding (128/512 chiều), Thuật toán Cosine Similarity
+- Cơ chế bảo mật      : ASP.NET Core Identity, JWT Bearer Token, 2FA OTP qua Email (MailKit)
+- Nền tảng triển khai : Docker Multi-stage build, Render Cloud Platform
+
+----------------------------------------------------------------------------------------
+I. GIỚI THIỆU VỀ SẢN PHẨM (PRODUCT OVERVIEW)
+----------------------------------------------------------------------------------------
+Anti-Theft là giải pháp an ninh bảo vệ tài sản và không gian sống toàn diện, kết hợp 
+giữa thiết bị di động/camera giám sát thời gian thực với hệ thống máy chủ Backend xử lý 
+thông minh.
+
+Hệ thống cho phép người dùng kích hoạt trạng thái phòng vệ (Armed Mode), tự động giám sát
+không gian, phân biệt khuôn mặt chính chủ với người lạ bằng trí tuệ nhân tạo (AI). Khi 
+phát hiện các dấu hiệu đột nhập (chuyển động bất thường, âm thanh lớn vượt ngưỡng dB, hoặc 
+khuôn mặt lạ không xác định), hệ thống sẽ ngay lập tức:
+1. Kích hoạt còi báo động khẩn cấp (Siren Alert).
+2. Tự động chụp lại hình ảnh bằng chứng của kẻ xâm nhập tại thời điểm diễn ra sự việc.
+3. Ghi lại nhật ký an ninh chi tiết (thời gian, hình ảnh, mức độ nguy hiểm).
+4. Gửi email cảnh báo tức thời kèm hình ảnh hiện trường trực tiếp về hòm thư người dùng.
+
+Đồng thời, hệ thống cung cấp giao diện quản trị (Admin Portal) toàn diện giúp theo dõi
+tình trạng an ninh, thống kê số liệu cảnh báo và quản lý người dùng tập trung.
+
+----------------------------------------------------------------------------------------
+II. CÁC TÍNH NĂNG ĐÃ HOÀN THÀNH (IMPLEMENTED FEATURES)
+----------------------------------------------------------------------------------------
+
+1. PHÂN HỆ XÁC THỰC & BẢO MẬT TÀI KHOẢN (AUTHENTICATION & SECURITY)
+   - Đăng ký tài khoản: Kiểm tra hợp lệ dữ liệu, mã hóa mật khẩu an toàn theo chuẩn Identity.
+   - Đăng nhập bảo mật 2 lớp (2FA):
+     + Bước 1: Xác thực tài khoản & mật khẩu.
+     + Bước 2: Tự động tạo và gửi mã xác thực OTP 6 số qua Email người dùng.
+   - Xác thực OTP & Cấp phát JWT: Kiểm tra hạn dùng OTP, cấp JWT Access Token định danh.
+   - Cơ chế phân quyền RBAC (Role-Based Access Control): Tự động khởi tạo và phân chia vai 
+     trò Admin và User.
+
+2. PHÂN HỆ AI NHẬN DIỆN & QUẢN LÝ KHUÔN MẶT (BIOMETRIC FACE RECOGNITION)
+   - Đăng ký khuôn mặt chính chủ: Tiếp nhận ảnh chân dung tham chiếu và trích xuất vector 
+     đặc trưng (Embedding) lưu trữ an toàn trong cơ sở dữ liệu.
+   - Quản lý hồ sơ khuôn mặt: Lấy thông tin hồ sơ, cập nhật ảnh mới, xóa hồ sơ sinh trắc học.
+   - Xác minh khuôn mặt thời gian thực (Face Verification):
+     + Tính toán độ tương đồng giữa khuôn mặt quét được với khuôn mặt chính chủ bằng thuật 
+       toán Cosine Similarity.
+     + Nhận diện hợp lệ (độ khớp >= 75%): Tự động mở khóa và ghi nhận vào Nhật ký Ra/Vào (AccessLog).
+     + Phát hiện xâm nhập (độ khớp < 75%): Nếu hệ thống đang bật chế độ bảo vệ (Armed), 
+       hệ thống sẽ tự động chụp ảnh lưu bằng chứng, phát tín hiệu còi, ghi nhật ký cảnh báo 
+       (AlertLog) và gửi email khẩn cấp cho chủ sở hữu.
+   - Phục vụ ảnh an toàn: Endpoint xem ảnh chụp bằng chứng có bảo vệ chống truy cập trái phép.
+
+3. PHÂN HỆ CẢNH BÁO CHỐNG TRỘM & ÂM THANH (ALERT & DETECTION SYSTEM)
+   - Cảnh báo chuyển động (Motion Alert): Tiếp nhận tín hiệu phát hiện chuyển động khi đang 
+     trong trạng thái bảo vệ, tự động gửi email cảnh báo tức thời.
+   - Cảnh báo âm thanh (Sound Alert): Giám sát âm thanh vượt ngưỡng decibel (dB) cài đặt.
+   - Cơ chế Cooldown thông minh (30 giây): Giúp hệ thống không bị gửi email dồn dập khi có 
+     tiếng ồn liên tục.
+   - Lịch sử cảnh báo cá nhân: Người dùng dễ dàng theo dõi lại toàn bộ các lần phát hiện 
+     xâm nhập, phân loại theo các mức độ nghiêm trọng (High, Medium, Low).
+
+4. PHÂN HỆ CẤU HÌNH AN NINH CÁ NHÂN HÓA (SECURITY SETTINGS)
+   - Kích hoạt / Hủy chế độ bảo vệ (Arm / Disarm): Bật/tắt chế độ giám sát chống trộm linh hoạt.
+   - Cài đặt còi báo động (Sound Siren): Bật/tắt phát âm thanh còi hú khi phát hiện đột nhập.
+   - Cài đặt thông báo qua Email: Tùy chỉnh bật/tắt nhận thư cảnh báo.
+   - Thời gian trễ báo động (Alarm Delay Seconds): Cài đặt thời gian đệm trước khi kích hoạt báo động.
+
+5. PHÂN HỆ QUẢN TRỊ VIÊN HỆ THỐNG (ADMIN PORTAL & MANAGEMENT)
+   - Dashboard thống kê chuyên sâu:
+     + Tổng quan số lượng người dùng, số vụ cảnh báo hôm nay, số lượt quét mặt ra/vào.
+     + Biểu đồ tỷ lệ cảnh báo theo mức độ (Cao / Trung bình / Thấp).
+     + Danh sách các vụ cảnh báo gần nhất và tỷ lệ hoạt động an ninh.
+   - Quản lý người dùng: Danh sách phân trang, tìm kiếm theo tên/email, xem thông tin chi tiết, 
+     thay đổi quyền hạn (gán quyền Admin/User), Khóa (Lock) hoặc Mở khóa (Unlock) tài khoản.
+   - Quản lý cảnh báo toàn hệ thống: Xem chi tiết từng vụ việc, hình ảnh vi phạm, đánh dấu 
+     đã xử lý / đã đọc từng cảnh báo hoặc tất cả các cảnh báo.
+   - Quản lý nhật ký truy cập (Access Logs): Theo dõi lịch sử người dùng quét mặt thành công.
+   - Giám sát trạng thái máy chủ (System Info): Xem phiên bản hệ điều hành máy chủ, bộ nhớ RAM, 
+     thời gian chạy liên tục (Uptime), thông tin môi trường triển khai.
+
+6. ĐÓNG GÓI VÀ TRIỂN KHAI ĐÁM MÂY (DEVOPS & DEPLOYMENT)
+   - Cấu hình Docker đa tầng (Multi-stage build): Tối ưu dung lượng hình ảnh chạy ứng dụng.
+   - Tự động thích ứng cổng kết nối (Port Binding): Tự động tương thích với biến môi trường 
+     PORT của Cloud/Render.
+   - Tích hợp Swagger UI: Cho phép trực quan hóa và kiểm thử toàn bộ API trên môi trường mạng.
+   - Tài liệu tích hợp API Frontend: Đã biên soạn đầy đủ tài liệu API phục vụ cho lập trình 
+     viên Mobile (Flutter/React Native) kết nối dễ dàng.
+
+========================================================================================
+Ngày hoàn thành cập nhật: 22/10/2026
+Sinh viên thực hiện: Phan Ngọc Quỳnh Hương
+========================================================================================
