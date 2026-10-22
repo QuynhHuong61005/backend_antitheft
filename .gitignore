@@ -485,3 +485,10 @@ $RECYCLE.BIN/
 
 
 appsettings.Development.json
+
+# Uploaded test captures and faces
+PhanNgocQuynhHuong_AntiTheftAPI/Uploads/captures/*
+PhanNgocQuynhHuong_AntiTheftAPI/Uploads/faces/*
+!PhanNgocQuynhHuong_AntiTheftAPI/Uploads/captures/.gitkeep
+!PhanNgocQuynhHuong_AntiTheftAPI/Uploads/faces/.gitkeep
+

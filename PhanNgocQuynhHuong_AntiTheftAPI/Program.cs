@@ -16,40 +16,38 @@ var jwtSettings = builder.Configuration
     .GetSection("Jwt")
     .Get<JwtSettings>()
     ?? throw new InvalidOperationException(
-        "Không tìm th?y c?u hình Jwt trong appsettings.json.");
+        "Khong tim thay cau hinh Jwt trong appsettings.json.");
 
 if (string.IsNullOrWhiteSpace(jwtSettings.Issuer) ||
     string.IsNullOrWhiteSpace(jwtSettings.Audience) ||
     string.IsNullOrWhiteSpace(jwtSettings.SecretKey))
 {
     throw new InvalidOperationException(
-        "Issuer, Audience và SecretKey không ???c ?? tr?ng.");
+        "Issuer, Audience va SecretKey khong duoc de trong.");
 }
 
 if (Encoding.UTF8.GetByteCount(jwtSettings.SecretKey) < 32)
 {
     throw new InvalidOperationException(
-        "Jwt:SecretKey ph?i có ít nh?t 32 byte.");
+        "Jwt:SecretKey phai co it nhat 32 byte.");
 }
 
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("Jwt"));
 
-// ??c connection string t? appsettings.json.
 var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
-        "Không tìm th?y connection string DefaultConnection.");
+        "Khong tim thay connection string DefaultConnection.");
 
-// ??ng ký EF Core và SQL Server.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// ??ng ký ASP.NET Core Identity.
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
+
 builder.Services
     .AddAuthentication(options =>
     {
@@ -91,7 +89,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Dán accessToken nh?n ???c khi ??ng nh?p."
+        Description = "Dan accessToken nhan duoc khi dang nhap."
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -119,12 +117,13 @@ builder.Services
         !string.IsNullOrWhiteSpace(settings.SenderEmail) &&
         !string.IsNullOrWhiteSpace(settings.Username) &&
         !string.IsNullOrWhiteSpace(settings.Password),
-        "EmailSettings ch?a ???c c?u hình ??y ??.")
+        "EmailSettings chua duoc cau hinh day du.")
     .ValidateOnStart();
 
 builder.Services.AddTransient<EmailService>();
 builder.Services.AddScoped<OtpService>();
-builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IFaceRecognitionService, FaceRecognitionService>();
 
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
@@ -148,25 +147,37 @@ using (var scope = app.Services.CreateScope())
                     result.Errors.Select(e => e.Description));
 
                 throw new InvalidOperationException(
-                    $"Không th? t?o role {role}: {errors}");
+                    $"Khong the tao role {role}: {errors}");
             }
         }
     }
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Cho phep Swagger tren ca moi truong Cloud/Render de tien kiem tra va test API
+app.UseSwagger();
+app.UseSwaggerUI();
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
+// Render xu ly SSL/HTTPS o edge proxy, khong can UseHttpsRedirection trong container
+// if (!app.Environment.IsDevelopment())
+// {
+//     app.UseHttpsRedirection();
+// }
+
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Endpoint kiem tra trang thai server (Health Check)
+app.MapGet("/", () => "PhanNgocQuynhHuong AntiTheft API is running!");
+
 app.MapControllers();
 
-app.Run();
+// Tu dong nhan Port tu bien moi truong PORT do Render cap (mac dinh hoac fallback theo cau hinh)
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    app.Run($"http://0.0.0.0:{port}");
+}
+else
+{
+    app.Run();
+}
