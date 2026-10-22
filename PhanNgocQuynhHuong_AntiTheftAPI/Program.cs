@@ -134,17 +134,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services
-    .AddOptions<EmailSettings>()
-    .Bind(builder.Configuration.GetSection("EmailSettings"))
-    .Validate(settings =>
-        !string.IsNullOrWhiteSpace(settings.Host) &&
-        settings.Port > 0 &&
-        !string.IsNullOrWhiteSpace(settings.SenderEmail) &&
-        !string.IsNullOrWhiteSpace(settings.Username) &&
-        !string.IsNullOrWhiteSpace(settings.Password),
-        "EmailSettings chua duoc cau hinh day du.")
-    .ValidateOnStart();
+// Cấu hình chuẩn để .NET tự động đọc từ cả file appsettings.json lẫn Environment trên Render
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
 builder.Services.AddTransient<EmailService>();
 builder.Services.AddScoped<OtpService>();
