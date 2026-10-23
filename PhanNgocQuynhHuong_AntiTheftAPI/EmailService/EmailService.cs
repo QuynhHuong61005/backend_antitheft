@@ -18,10 +18,10 @@ public class EmailService
 
     public async Task SendEmailAsync(string toEmail, string subject, string body)
     {
-        // Có thể lấy đường link URL từ biến môi trường GOOGLE_SCRIPT_URL hoặc dán trực tiếp vào đây
+        // Đường link Google Apps Script Web App
         string googleScriptUrl = Environment.GetEnvironmentVariable("GOOGLE_SCRIPT_URL")
             ?? _configuration?["GoogleScriptUrl"]
-            ?? "https://script.google.com/macros/s/AKfycb.../exec"; 
+            ?? "https://script.google.com/macros/s/AKfycbwTZ1mL2FaTxMw5-UUKoHxcoFjq8MoWC3V15_b0LFJYAkoRQIlZtTlSxrI99bQzmeJt/exec"; 
 
         using var httpClient = new HttpClient();
         
