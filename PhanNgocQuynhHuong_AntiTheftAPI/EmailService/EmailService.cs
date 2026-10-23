@@ -1,6 +1,7 @@
-using System.Net;
-using System.Net.Mail;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Options;
+using MimeKit;
 using PhanNgocQuynhHuong_AntiTheftAPI.Settings;
 
 namespace PhanNgocQuynhHuong_AntiTheftAPI.Services;
@@ -14,49 +15,49 @@ public class EmailService
         _settings = options.Value;
     }
 
-    public Task SendEmailAsync(
-        string toEmail,
-        string subject,
-        string body)
+    public async Task SendEmailAsync(string toEmail, string subject, string body)
     {
         var fromEmail = !string.IsNullOrWhiteSpace(_settings.SenderEmail)
-            ? _settings.SenderEmail
-            : _settings.Username;
-        var appPassword = _settings.Password;
+            ? _settings.SenderEmail.Trim()
+            : _settings.Username.Trim();
+        var appPassword = _settings.Password?.Trim() ?? string.Empty;
         var host = !string.IsNullOrWhiteSpace(_settings.Host)
-            ? _settings.Host
+            ? _settings.Host.Trim()
             : "smtp.gmail.com";
+        var port = _settings.Port > 0 ? _settings.Port : 587;
 
-        using var client = new SmtpClient(host);
-        client.Port = 587; 
-        client.EnableSsl = true; 
-        client.UseDefaultCredentials = false; // Bắt buộc nằm trên dòng gán Credentials
-        client.Credentials = new NetworkCredential(fromEmail, appPassword);
-        client.Timeout = 10000; // Ngắt kết nối sau 10 giây nếu bị treo
+        var email = new MimeMessage();
+        if (!string.IsNullOrWhiteSpace(_settings.SenderName))
+        {
+            email.From.Add(new MailboxAddress(_settings.SenderName, fromEmail));
+        }
+        else
+        {
+            email.From.Add(MailboxAddress.Parse(fromEmail));
+        }
+        email.To.Add(MailboxAddress.Parse(toEmail));
+        email.Subject = subject;
+        
+        var builder = new BodyBuilder { HtmlBody = body };
+        email.Body = builder.ToMessageBody();
 
-        using var mailMessage = new MailMessage();
-        mailMessage.From = new MailAddress(fromEmail, string.IsNullOrWhiteSpace(_settings.SenderName) ? fromEmail : _settings.SenderName);
-        mailMessage.To.Add(toEmail);
-        mailMessage.Subject = subject;
-        mailMessage.Body = body;
-        mailMessage.IsBodyHtml = body.Contains("<html", StringComparison.OrdinalIgnoreCase)
-            || body.Contains("<div", StringComparison.OrdinalIgnoreCase)
-            || body.Contains("<p", StringComparison.OrdinalIgnoreCase)
-            || body.Contains("<h2", StringComparison.OrdinalIgnoreCase);
+        using var smtp = new SmtpClient();
+        smtp.Timeout = 10000; // Ngắt kết nối sau 10 giây nếu bị treo
 
         try
         {
-            client.Send(mailMessage);
-            Console.WriteLine("✅ Gửi mail thành công!"); 
-            return Task.CompletedTask;
+            // Bắt buộc dùng StartTls
+            await smtp.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+            await smtp.AuthenticateAsync(fromEmail, appPassword);
+            await smtp.SendAsync(email);
+            await smtp.DisconnectAsync(true);
+            Console.WriteLine("✅ Gửi mail thành công!");
         }
         catch (Exception ex)
         {
             // BẮT BUỘC phải có dòng này để Render in lỗi ra tab Logs
             Console.WriteLine("❌ LỖI GỬI MAIL GẶP PHẢI: " + ex.ToString());
-            
-            // Quăng lỗi ra ngoài để API trả về lỗi 500 cho Flutter, tránh Flutter bị treo 
-            throw; 
+            throw;
         }
     }
 }
