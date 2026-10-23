@@ -75,8 +75,10 @@ public class OtpService
                 "AntiTheft - Mã OTP đăng nhập",
                 html);
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
+            Console.WriteLine($"[OtpService] Lỗi khi gửi OTP tới {email}: {ex}");
             // Không để lại OTP còn hiệu lực nếu gửi email thất bại.
             record.IsUsed = true;
             await _db.SaveChangesAsync();

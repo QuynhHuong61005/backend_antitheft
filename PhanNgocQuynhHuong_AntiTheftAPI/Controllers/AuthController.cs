@@ -136,11 +136,14 @@ public class AuthController : ControllerBase
                 requiresOtp = true
             });
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
+            Console.WriteLine($"[AuthController] Lỗi gửi OTP: {ex}");
             return StatusCode(500, new
             {
-                message = "Không gửi được OTP. Vui lòng thử lại."
+                message = "Không gửi được OTP. Vui lòng thử lại.",
+                error = ex.Message
             });
         }
     }
