@@ -1,7 +1,6 @@
-﻿
-using MailKit.Security;
+using System.Net;
+using System.Net.Mail;
 using Microsoft.Extensions.Options;
-using MimeKit;
 using PhanNgocQuynhHuong_AntiTheftAPI.Settings;
 
 namespace PhanNgocQuynhHuong_AntiTheftAPI.Services;
@@ -20,33 +19,31 @@ public class EmailService
         string subject,
         string body)
     {
-        var message = new MimeMessage();
+        var fromEmail = !string.IsNullOrWhiteSpace(_settings.SenderEmail)
+            ? _settings.SenderEmail
+            : _settings.Username;
+        var appPassword = _settings.Password;
+        var host = !string.IsNullOrWhiteSpace(_settings.Host)
+            ? _settings.Host
+            : "smtp.gmail.com";
 
-        message.From.Add(
-            new MailboxAddress(
-                _settings.SenderName,
-                _settings.SenderEmail));
+        using var client = new SmtpClient(host);
+        client.Port = 587; 
+        client.EnableSsl = true; 
+        client.UseDefaultCredentials = false; // Bắt buộc nằm trên dòng gán Credentials
+        client.Credentials = new NetworkCredential(fromEmail, appPassword);
+        client.Timeout = 10000; // Ngắt kết nối sau 10 giây nếu bị treo
 
-        message.To.Add(MailboxAddress.Parse(toEmail));
+        using var message = new MailMessage();
+        message.From = new MailAddress(fromEmail, string.IsNullOrWhiteSpace(_settings.SenderName) ? fromEmail : _settings.SenderName);
+        message.To.Add(toEmail);
         message.Subject = subject;
+        message.Body = body;
+        message.IsBodyHtml = body.Contains("<html", StringComparison.OrdinalIgnoreCase)
+            || body.Contains("<div", StringComparison.OrdinalIgnoreCase)
+            || body.Contains("<p", StringComparison.OrdinalIgnoreCase)
+            || body.Contains("<h2", StringComparison.OrdinalIgnoreCase);
 
-        message.Body = new TextPart("plain")
-        {
-            Text = body
-        };
-
-        using var client = new MailKit.Net.Smtp.SmtpClient();
-
-        await client.ConnectAsync(
-            _settings.Host,
-            _settings.Port,
-            SecureSocketOptions.StartTls);
-
-        await client.AuthenticateAsync(
-            _settings.Username,
-            _settings.Password);
-
-        await client.SendAsync(message);
-        await client.DisconnectAsync(true);
+        await client.SendMailAsync(message);
     }
 }
