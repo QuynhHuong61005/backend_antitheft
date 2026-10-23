@@ -14,7 +14,7 @@ public class EmailService
         _settings = options.Value;
     }
 
-    public async Task SendEmailAsync(
+    public Task SendEmailAsync(
         string toEmail,
         string subject,
         string body)
@@ -46,8 +46,9 @@ public class EmailService
 
         try
         {
-            await client.SendMailAsync(mailMessage);
+            client.Send(mailMessage);
             Console.WriteLine("✅ Gửi mail thành công!"); 
+            return Task.CompletedTask;
         }
         catch (Exception ex)
         {
